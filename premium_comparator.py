@@ -225,7 +225,7 @@ class PremiumComparator:
         print("\n✅ Comparison completed! Check the output folder for results.")
 
 # Define Paths (Update paths based on your local setup)
-base_folder = "/Users/sukrutasakoji/Downloads/Trial"
+base_folder = "/Users/sukrutasakoji/Downloads/Given"
 s3_premium_file = "/Users/sukrutasakoji/Downloads/S3_premium_2021-22.xlsx"
 output_folder = "/Users/sukrutasakoji/Downloads"
 
