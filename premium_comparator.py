@@ -5,6 +5,8 @@ from openpyxl import load_workbook
 import pyxlsb
 import xlrd
 from pyxlsb import open_workbook
+import msoffcrypto
+import io
 
 class PremiumComparator:
     def __init__(self, base_folder, s3_premium_file, output_folder):
@@ -14,9 +16,9 @@ class PremiumComparator:
         self.base_folder = base_folder
         self.s3_premium_file = s3_premium_file
         self.output_folder = output_folder
-        self.given_premium_file = os.path.join(output_folder, "Given_Premium_2022-23.xlsx")
-        self.refined_premium_file = os.path.join(output_folder, "Refined_Given_Premium_2022-23.xlsx")
-        self.comparison_file = os.path.join(output_folder, "Comparison_2022-23.xlsx")
+        self.given_premium_file = os.path.join(output_folder, "Given_Premium_2021-22.xlsx")
+        self.refined_premium_file = os.path.join(output_folder, "Refined_Given_Premium_2021-22.xlsx")
+        self.comparison_file = os.path.join(output_folder, "Comparison_2021-22.xlsx")
 
         # Create output folder if not exists
         os.makedirs(output_folder, exist_ok=True)
@@ -90,6 +92,21 @@ class PremiumComparator:
 
         return 0  # Default to 0 if extraction fails
     
+    def get_excel_file(insurer_file, password):
+        # Open the file in binary mode
+        with open(insurer_file, "rb") as f:
+            office_file = msoffcrypto.OfficeFile(f)
+            if office_file.is_encrypted():
+                # If the file is encrypted, load the key using the password
+                office_file.load_key(password=password)
+                decrypted_file = io.BytesIO()
+                office_file.decrypt(decrypted_file)
+                decrypted_file.seek(0)
+                return pd.ExcelFile(decrypted_file, engine="openpyxl")
+            else:
+                # File is not protected, so open it directly
+                return pd.ExcelFile(insurer_file, engine="openpyxl")
+    
     def process_folders(self):
         """
         Iterates through yearly folders, extracts total premium, and stores in Given_Premium.xlsx.
@@ -112,7 +129,7 @@ class PremiumComparator:
                 print(f"Processing {insurer_name} for year {year_folder}")
 
                 if ext.lower() == ".xlsx":
-                    xl = pd.ExcelFile(insurer_file)
+                    xl = self.get_excel_file(insurer_file,"002578")  # Added password protection
                     for sheet_name in xl.sheet_names if ext.lower() in [".xlsx", ".xls",".xlsb"] else xl.sheets:
                         if sheet_name.lower().startswith(("base", "reward","Base","Reward")):  # Case insensitive check
                             total_premium = self.extract_total_premium(insurer_file, sheet_name, ext.lower())
@@ -204,8 +221,8 @@ class PremiumComparator:
         print("\n✅ Comparison completed! Check the output folder for results.")
 
 # Define Paths (Update paths based on your local setup)
-base_folder = "/Users/sukrutasakoji/Downloads/Given"
-s3_premium_file = "/Users/sukrutasakoji/Downloads/S3_premium_2022-23.xlsx"
+base_folder = "/Users/sukrutasakoji/Downloads/Trial"
+s3_premium_file = "/Users/sukrutasakoji/Downloads/S3_premium_2021-22.xlsx"
 output_folder = "/Users/sukrutasakoji/Downloads"
 
 
