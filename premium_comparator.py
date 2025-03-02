@@ -29,7 +29,9 @@ class PremiumComparator:
         """
         try:
             if file_type == ".xlsx":
-                temp_df = pd.read_excel(file_path, sheet_name=sheet_name, nrows=5, engine="openpyxl",header=None)
+                # Use helper function to get a decrypted (or normal) ExcelFile object.
+                xl = self.get_excel_file(file_path,"002578")
+                temp_df = pd.read_excel(xl, sheet_name=sheet_name, nrows=5, engine="openpyxl",header=None)
             elif file_type == ".xls":
                 temp_df = pd.read_excel(file_path, sheet_name=sheet_name, nrows=5, engine="xlrd",header=None)
             elif file_type == ".xlsb":
@@ -62,7 +64,9 @@ class PremiumComparator:
 
             # Read the full sheet with the detected header row
             if file_type == ".xlsx":
-                df = pd.read_excel(file_path, sheet_name=sheet_name, header=correct_header_row, engine="openpyxl")
+                # Use helper function to get a decrypted (or normal) ExcelFile object.
+                xl = self.get_excel_file(file_path,"002578")
+                df = pd.read_excel(xl, sheet_name=sheet_name, header=correct_header_row, engine="openpyxl")
             elif file_type == ".xls":
                 df = pd.read_excel(file_path, sheet_name=sheet_name, header=correct_header_row, engine="xlrd")
             elif file_type == ".xlsb":
@@ -92,7 +96,7 @@ class PremiumComparator:
 
         return 0  # Default to 0 if extraction fails
     
-    def get_excel_file(insurer_file, password):
+    def get_excel_file(self,insurer_file, password):
         # Open the file in binary mode
         with open(insurer_file, "rb") as f:
             office_file = msoffcrypto.OfficeFile(f)
