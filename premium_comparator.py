@@ -147,11 +147,10 @@ class PremiumComparator:
 
         # Convert Type column to lowercase before processing
         df["Type"] = df["Type"].str.lower()
-        print(df)
 
         # Normalize Type column (base1, base2 → base; reward1, reward2 → reward)
         df["Type"] = df["Type"].apply(lambda x: "base" if x.startswith("base") else "reward")
-        print(df)
+        print("df before refining:", df)
 
         # Group by Year, Insurer, Type and sum Premium
         df_refined = df.groupby(["Year", "Insurer", "Type"], as_index=False).agg({"Premium": "sum"})
@@ -173,12 +172,18 @@ class PremiumComparator:
         df_s3["Year"] = df_s3["Year"].astype(str)
         df_given["Year"] = df_given["Year"].astype(str)
 
-
         df_s3 = df_s3.groupby(["Year", "Insurer", "Type"], as_index=False).agg({"Premium": "sum"})
+
+        print("df_s3:", df_s3)
+        print("df_given:", df_given)
 
         # Merge on Year, Insurer, Type
         df_comparison = df_s3.merge(df_given, on=["Year", "Insurer", "Type"], how="outer", suffixes=("_S3", "_Given"))
+        print("df_comparison:", df_comparison)
+
         df_comparison["Difference"] = df_comparison["Premium_S3"].fillna(0) - df_comparison["Premium_Given"].fillna(0)
+
+        print("df_comparison:", df_comparison)
 
         df_comparison.to_excel(self.comparison_file, index=False)
         print(f"Comparison.xlsx saved at {self.comparison_file}")
@@ -202,6 +207,7 @@ class PremiumComparator:
 base_folder = "/Users/sukrutasakoji/Downloads/Given"
 s3_premium_file = "/Users/sukrutasakoji/Downloads/S3_premium_2022-23.xlsx"
 output_folder = "/Users/sukrutasakoji/Downloads"
+
 
 # Create an instance of PremiumComparator
 comparator = PremiumComparator(base_folder, s3_premium_file, output_folder)
