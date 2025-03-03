@@ -7,6 +7,7 @@ import xlrd
 from pyxlsb import open_workbook
 import msoffcrypto
 import io
+from fuzzywuzzy import process
 
 class PremiumComparator:
     def __init__(self, base_folder, s3_premium_file, output_folder):
@@ -16,9 +17,9 @@ class PremiumComparator:
         self.base_folder = base_folder
         self.s3_premium_file = s3_premium_file
         self.output_folder = output_folder
-        self.given_premium_file = os.path.join(output_folder, "Given_Premium_2021-22.xlsx")
-        self.refined_premium_file = os.path.join(output_folder, "Refined_Given_Premium_2021-22.xlsx")
-        self.comparison_file = os.path.join(output_folder, "Comparison_2021-22.xlsx")
+        self.given_premium_file = os.path.join(output_folder, "Given_Premium_2023-24.xlsx")
+        self.refined_premium_file = os.path.join(output_folder, "Refined_Given_Premium_2023-24.xlsx")
+        self.comparison_file = os.path.join(output_folder, "Comparison_2023-24.xlsx")
 
         # Create output folder if not exists
         os.makedirs(output_folder, exist_ok=True)
@@ -160,6 +161,21 @@ class PremiumComparator:
         df_given.to_excel(self.given_premium_file, index=False)
         print(f"Given_Premium.xlsx saved at {self.given_premium_file}")
 
+    # Your curated list of valid insurer names in uppercase
+    valid_insurers = [
+        "ADITYA BIRLA HEALTH", "ADITYA BIRLA LIFE", "AEGON", "BAGIC", "BALIC",
+        "BHARTI AXA GI", "BHARTI AXA LIFE", "CANARA HSBC", "CARE HEALTH", "CHOLA",
+        "EDELWEISS GENERAL", "EDELWEISS TOKIO", "FUTURE", "GO DIGIT", "HDFC ERGO",
+        "HDFC ERGO HEALTH", "HDFC LIFE", "ICICI LOMBARD", "ICICI PRU", "IFFCO",
+        "KOTAK GI", "KOTAK MAHINDRA LIFE", "LIC", "LIBERTY", "MAGMA", "MANIPALCIGNA",
+        "MAX LIFE", "NATIONAL", "NEW INDIA", "NIVA BUPA", "ORIENTAL", "PNB LIFE",
+        "RAHEJA", "RELIANCE", "ROYAL", "SBI", "SHRIRAM", "STAR", "TATA AIG",
+        "TATA AIA", "UNITED", "UNIVERSAL"]
+
+    def fuzzy_correct(insurer, valid_list, threshold=90):
+        best_match, score = process.extractOne(insurer, valid_list)
+        return best_match if score >= threshold else insurer
+
     def refine_premium_data(self):
         """
         Aggregates base* and reward* into base and reward categories.
@@ -226,7 +242,7 @@ class PremiumComparator:
 
 # Define Paths (Update paths based on your local setup)
 base_folder = "/Users/sukrutasakoji/Downloads/Given"
-s3_premium_file = "/Users/sukrutasakoji/Downloads/S3_premium_2021-22.xlsx"
+s3_premium_file = "/Users/sukrutasakoji/Downloads/S3_premium_2023-24.xlsx"
 output_folder = "/Users/sukrutasakoji/Downloads"
 
 
