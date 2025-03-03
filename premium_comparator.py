@@ -17,9 +17,9 @@ class PremiumComparator:
         self.base_folder = base_folder
         self.s3_premium_file = s3_premium_file
         self.output_folder = output_folder
-        self.given_premium_file = os.path.join(output_folder, "Given_Premium_2023-24.xlsx")
-        self.refined_premium_file = os.path.join(output_folder, "Refined_Given_Premium_2023-24.xlsx")
-        self.comparison_file = os.path.join(output_folder, "Comparison_2023-24.xlsx")
+        self.given_premium_file = os.path.join(output_folder, "Given_Premium_2020-21.xlsx")
+        self.refined_premium_file = os.path.join(output_folder, "Refined_Given_Premium_2020-21.xlsx")
+        self.comparison_file = os.path.join(output_folder, "Comparison_2020-21.xlsx")
 
         # Create output folder if not exists
         os.makedirs(output_folder, exist_ok=True)
@@ -172,7 +172,7 @@ class PremiumComparator:
         "RAHEJA", "RELIANCE", "ROYAL", "SBI", "SHRIRAM", "STAR", "TATA AIG",
         "TATA AIA", "UNITED", "UNIVERSAL"]
 
-    def fuzzy_correct(insurer, valid_list, threshold=90):
+    def fuzzy_correct(self,insurer, valid_list, threshold=90):
         best_match, score = process.extractOne(insurer, valid_list)
         return best_match if score >= threshold else insurer
 
@@ -182,12 +182,19 @@ class PremiumComparator:
         """
         df = pd.read_excel(self.given_premium_file)
 
+        # Standardize the 'Insurer' column: Convert to uppercase and strip spaces.
+        df["Insurer"] = df["Insurer"].str.upper().str.strip()
+
+        # Apply fuzzy matching to standardize insurer names.
+        df["Insurer"] = df["Insurer"].apply(lambda x: self.fuzzy_correct(x, self.valid_insurers, threshold=90))
+
         # Convert Type column to lowercase before processing
         df["Type"] = df["Type"].str.lower()
 
         # Normalize Type column (base1, base2 → base; reward1, reward2 → reward)
         df["Type"] = df["Type"].apply(lambda x: "base" if x.startswith("base") else "reward")
         print("df before refining:", df)
+
 
         # Group by Year, Insurer, Type and sum Premium
         df_refined = df.groupby(["Year", "Insurer", "Type"], as_index=False).agg({"Premium": "sum"})
@@ -208,6 +215,9 @@ class PremiumComparator:
 
         df_s3["Year"] = df_s3["Year"].astype(str)
         df_given["Year"] = df_given["Year"].astype(str)
+
+        df_s3["Insurer"] = df_s3["Insurer"].str.upper().str.strip()
+        df_given["Insurer"] = df_given["Insurer"].str.upper().str.strip()
 
         df_s3 = df_s3.groupby(["Year", "Insurer", "Type"], as_index=False).agg({"Premium": "sum"})
 
@@ -242,7 +252,7 @@ class PremiumComparator:
 
 # Define Paths (Update paths based on your local setup)
 base_folder = "/Users/sukrutasakoji/Downloads/Given"
-s3_premium_file = "/Users/sukrutasakoji/Downloads/S3_premium_2023-24.xlsx"
+s3_premium_file = "/Users/sukrutasakoji/Downloads/S3_premium_2020-21.xlsx"
 output_folder = "/Users/sukrutasakoji/Downloads"
 
 
